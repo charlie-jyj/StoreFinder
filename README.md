@@ -144,3 +144,53 @@ Command CodeSign failed with a nonzero exit code
 
 ```
 
+### 🚀 RxSwift
+
+#### withLatestFrom(_ second: Source)
+
+```swift
+        //MARK: 지도 중심점 설정
+        let moveToCurrentLocation = currentLocationButtonTapped // button이 tapped 되었을 때에
+            .withLatestFrom(currentLocation) // current location을 한 번이라도 받은 이 후에
+```
+- Merges two observable sequences into one observable sequence 
+- by using latest element from the second sequence every time when self emits an element.
+- Elements emitted by self before the second source has emitted any values will be omitted.
+- An observable sequence containing the result of combining each element of the self with the latest element from the second source
+- if any, using the specified result selector function.
+
+#### accept()
+
+```swift
+    func mapView(_ mapView: MTMapView!, finishedMapMoveAnimation mapCenterPoint: MTMapPoint!) {
+         viewModel?.mapCenterPoint.accept(mapCenterPoint)
+    }
+```
+- Accepts `event` and emits it to subscribers
+- onNext 대신, Relay는 accept
+- Relay는 error나 completed 를 받지 않기 때문에
+
+
+#### extension Reactive where Base: 
+
+```swift
+public struct Binder<Value>: ObserverType {
+    public typealias Element = Value
+    
+    private let binding: (Event<Value>) -> Void
+
+    /// Initializes `Binder`
+    ///
+    /// - parameter target: Target object.
+    /// - parameter scheduler: Scheduler used to bind the events.
+    /// - parameter binding: Binding logic.
+    public init<Target: AnyObject>(_ target: Target, scheduler: ImmediateSchedulerType = MainScheduler(), binding: @escaping (Target, Value) -> Void) {
+    
+extension Reactive where Base: MTMapView {
+    var setMapCenterPoint: Binder<MTMapPoint> {
+        return Binder(base) { base, point in
+            base.setMapCenter(point, animated: true)
+        }
+    }
+}
+```
