@@ -111,6 +111,14 @@ Command CodeSign failed with a nonzero exit code
     <https://holyswift.app/frameworks-embed-or-not-embed-thats-the-question>
     - Mach-O Type? 
     <https://medium.com/tokopedia-engineering/a-curious-case-of-mach-o-executable-26d5ecadd995>
+    
+- Could not find or use auto-linked library 'XCTestSwiftSupport'
+recently I met often unfamiliar errors when I build the project,
+I don't know why it works then but fails now
+
+- Build Settings > Build Options > Enable Testing Search Paths > YES
+
+
 
 #### 4. MTMapView 구현
 

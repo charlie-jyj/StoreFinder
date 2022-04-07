@@ -44,5 +44,20 @@ class DetailListCell: UITableViewCell {
                 contentView.addSubview($0)
             }
         
+        placeNameLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview().inset(18)
+        }
+        
+        addressLabel.snp.makeConstraints {
+            $0.top.equalTo(placeNameLabel.snp.bottom).offset(3)
+            $0.leading.equalTo(placeNameLabel)
+            $0.bottom.equalToSuperview().inset(12)
+        }
+        
+        distanceLabel.snp.makeConstraints {
+            $0.centerY.equalToSuperview()
+            $0.trailing.equalToSuperview().inset(20)
+        }
     }
 }

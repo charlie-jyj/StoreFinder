@@ -16,6 +16,7 @@ class LocationInformationViewController: UIViewController {
     let locationManager = CLLocationManager()
     let mapView = MTMapView()
     let detailList = UITableView()
+    let detailListBackgroundView = DetailListBackgroundView()
     let currentLocationButton = UIButton()
     var viewModel: LocationInformationViewModel?
     
@@ -29,7 +30,6 @@ class LocationInformationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         mapView.delegate = self
         locationManager.delegate = self
         attribute()
@@ -37,6 +37,8 @@ class LocationInformationViewController: UIViewController {
     }
     
     func bind(_ viewModel: LocationInformationViewModel) {
+        detailListBackgroundView.bind(viewModel.detailListBackgroundViewModel)
+        
         self.viewModel = viewModel
         currentLocationButton.rx.tap
             .bind(to: viewModel.currentLocationButtonTapped)
@@ -50,7 +52,31 @@ class LocationInformationViewController: UIViewController {
         viewModel.errorMessage
             .emit(to: self.rx.presentAlert)
             .disposed(by: disposeBag)
-            
+        
+        // scroll
+        viewModel.scrollToSelectedLocation
+            .emit(to: self.rx.showSelectedLocation)
+            .disposed(by: disposeBag)
+        
+        // tableview
+        viewModel.detailListCellData
+            .drive(detailList.rx.items) { tableView, row, data in
+                let cell = tableView.dequeueReusableCell(withIdentifier: "DetailListCell", for: IndexPath(row: row, section: 0)) as! DetailListCell
+                cell.setData(data)
+                return cell
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.detailListCellData
+            .map { $0.compactMap { $0.point }}
+            .drive(self.rx.addPOIItems)
+            .disposed(by: disposeBag)
+    
+        detailList.rx.itemSelected
+            .map { $0.row }
+            .bind(to: viewModel.detailListItemSelected)
+            .disposed(by: disposeBag)
+        
     }
     
     private func attribute() {
@@ -60,6 +86,9 @@ class LocationInformationViewController: UIViewController {
         currentLocationButton.setImage(UIImage(systemName: "location.fill"), for: .normal)
         currentLocationButton.backgroundColor = .white
         currentLocationButton.layer.cornerRadius = 20
+        detailList.register(DetailListCell.self, forCellReuseIdentifier: "DetailListCell")
+        detailList.separatorStyle = .none
+        detailList.backgroundView = detailListBackgroundView
     }
     
     private func layout() {
@@ -143,6 +172,30 @@ extension Reactive where Base: LocationInformationViewController {
             let action = UIAlertAction(title: "확인", style: .default, handler: nil)
             alertController.addAction(action)
             base.present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    var showSelectedLocation: Binder<Int> {
+        return Binder(base) { base, row in
+            let indexPath = IndexPath(row: row, section: 0)
+            base.detailList.selectRow(at: indexPath, animated: true, scrollPosition: .top)
+        }
+    }
+    
+    var addPOIItems: Binder<[MTMapPoint]> {
+        return Binder(base) { base, points in
+            let items = points
+                .enumerated()
+                .map { idx, point -> MTMapPOIItem in
+                    let mapPOIItem = MTMapPOIItem()
+                    mapPOIItem.mapPoint = point
+                    mapPOIItem.markerType = .bluePin
+                    mapPOIItem.showAnimationType = .springFromGround
+                    mapPOIItem.tag = idx
+                    return mapPOIItem
+                }
+            base.mapView.removeAllPOIItems()
+            base.mapView.addPOIItems(items)
         }
     }
 }
