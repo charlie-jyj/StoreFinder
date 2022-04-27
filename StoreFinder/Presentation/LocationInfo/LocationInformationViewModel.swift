@@ -29,19 +29,45 @@ struct LocationInformationViewModel {
     let mapViewError = PublishRelay<String>()
     let detailListItemSelected = PublishRelay<Int>()
     
-    let documentData = PublishSubject<[KLDocument?]>()
+    private let documentData = PublishSubject<[KLDocument]>()
     
-    init() {
+    init(model: LocationInformationModel = LocationInformationModel()) {
+        //MARK: 네트워크 통신으로 데이터 불러오기
+        let cvsLocationDataResult = mapCenterPoint  // finishedMapMoveAnimation -> mapCenterPoint.accept
+            .flatMapLatest(model.getLocation)
+            .share()
+        
+        let cvsLocationDataValue = cvsLocationDataResult
+            .compactMap { data -> LocationData? in
+                guard case let .success(value) = data else { return nil }
+                return value
+            }
+        
+        let cvsLocationDataErrorMessage = cvsLocationDataResult
+            .compactMap { data -> String? in
+                switch data {
+                case let .success(data) where data.documents.isEmpty:
+                    return """
+                    500m 근처에 이용할 수 있는 편의점이 없어요.
+                    지도 위치를 옮겨서 재검색 해주세요.
+                    """
+                case let .failure(error):
+                    return error.localizedDescription
+                default:
+                    return nil
+                }
+            }
+        
+        cvsLocationDataValue
+            .map { $0.documents }
+            .bind(to: documentData)
+            .disposed(by: disposeBag)
+        
+        
         //MARK: 지도 중심점 설정
         let selectedDetailListItem = detailListItemSelected  // trigger
             .withLatestFrom(documentData) { $1[$0] }  // 선택된 row의 document
-            .map { data -> MTMapPoint in
-                guard let data = data,
-                      let longitude = Double(data.x),
-                      let latitude = Double(data.y) else { return MTMapPoint() }
-                let geoCoord = MTMapPointGeo(latitude: latitude, longitude: longitude)
-                return MTMapPoint(geoCoord: geoCoord)
-            }
+            .map(model.documentToMapPoint)
         
         let moveToCurrentLocation = currentLocationButtonTapped
             .withLatestFrom(currentLocation) // current location을 한 번이라도 받은 이 후에 (최초 한 번이 count되지 않음)
@@ -57,10 +83,21 @@ struct LocationInformationViewModel {
         setMapCenter = currentMapCenter
             .asSignal(onErrorSignalWith: .empty())
         
-        errorMessage = mapViewError.asObservable()
+        errorMessage = Observable
+            .merge(
+                mapViewError.asObservable(),
+                cvsLocationDataErrorMessage
+            )
             .asSignal(onErrorJustReturn: "잠시 후 다시 시도해주세요.")
         
-        detailListCellData = Driver.just([])
+        detailListCellData = documentData
+            .map(model.documentToCellData)
+            .asDriver(onErrorDriveWith: .empty())
+        
+        documentData
+            .map{ !$0.isEmpty }
+            .bind(to: detailListBackgroundViewModel.shouldHideStatusLabel)
+            .disposed(by: disposeBag)
         
         // poiitem을 선택하면
         scrollToSelectedLocation = selectPOIItem

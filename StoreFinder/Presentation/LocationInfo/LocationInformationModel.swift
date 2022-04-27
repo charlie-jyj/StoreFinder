@@ -27,8 +27,8 @@ struct LocationInformationModel {
         }
     }
     
-    private func documentToMapPoint(_ doc: KLDocument) -> MTMapPoint {
-        return MTMapPoint(geoCoord: MTMapPointGeo(latitude: Double(doc.x) ?? .zero, longitude: Double(doc.y) ?? .zero))
+    func documentToMapPoint(_ doc: KLDocument) -> MTMapPoint {
+        return MTMapPoint(geoCoord: MTMapPointGeo(latitude: Double(doc.y) ?? .zero, longitude: Double(doc.x) ?? .zero))
     }
     
 }

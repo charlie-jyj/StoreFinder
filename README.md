@@ -41,6 +41,10 @@
 <https://developer.apple.com/documentation/corelocation>
 <https://developer.apple.com/documentation/corelocation/adding_location_services_to_your_app>
 
+##### 사용자 승인 얻기
+- info.plist
+- Privacy- Location When In Use Usage Description
+
 #### 🔑 CodingKey
 
 ```swift
@@ -61,6 +65,22 @@ struct Landmark: Codable {
 ```
 
 - String protocol이 CodingKey protocol 보다 먼저 와야한다.
+
+#### 🧩 where clause 사용하기
+
+```swift
+
+switch data {
+case let .success(data) where data.documents.isEmpty:
+
+extension Reactive where Base: MTMapView {
+///
+```
+- switch case 패턴과 결합하여 조건 추가 
+- 타입에 대한 프로토콜 제약 추가
+- to create dynamic filter
+
+<https://docs.swift.org/swift-book/LanguageGuide/ControlFlow.html>
 
 ### kakao map api 사용하기
 
@@ -118,6 +138,27 @@ I don't know why it works then but fails now
 
 - Build Settings > Build Options > Enable Testing Search Paths > YES
 
+- dyld Library not loaded @rpath/lib XCTest Swift Support.dylib
+    - Build Settings > Always Embed Swift Standard Libraries > YES
+    - RxTest lib 제거 => RxTest의 target 변경!
+    - M1으로 pod install 하려면, terminal을 rosetta mode로! 
+
+```swift
+# Podfile
+use_frameworks!
+
+target 'YOUR_TARGET_NAME' do
+    pod 'RxSwift', '6.5.0'
+    pod 'RxCocoa', '6.5.0'
+end
+
+# RxTest and RxBlocking make the most sense in the context of unit/integration tests
+target 'YOUR_TESTING_TARGET' do
+    pod 'RxBlocking', '6.5.0'
+    pod 'RxTest', '6.5.0'
+end
+```
+<https://github.com/ReactiveX/RxSwift>
 
 
 #### 4. MTMapView 구현
@@ -202,3 +243,15 @@ extension Reactive where Base: MTMapView {
     }
 }
 ```
+
+#### share()
+```swift
+
+    let cvsLocationDataResult = mapCenterPoint  // finishedMapMoveAnimation -> mapCenterPoint.accept
+        .flatMapLatest(model.getLocation)
+        .share()
+
+```
+- Returns an observable sequence that shares a single subscription to the underlying sequence, 
+- and immediately upon subscription replays elements in buffer.
+

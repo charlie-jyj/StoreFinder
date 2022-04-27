@@ -2,11 +2,10 @@
 //  StoreFinderTests.swift
 //  StoreFinderTests
 //
-//  Created by 정유진 on 2022/04/04.
+//  Created by 정유진 on 2022/04/12.
 //
 
 import XCTest
-@testable import StoreFinder
 
 class StoreFinderTests: XCTestCase {
 
@@ -28,7 +27,7 @@ class StoreFinderTests: XCTestCase {
 
     func testPerformanceExample() throws {
         // This is an example of a performance test case.
-        self.measure {
+        measure {
             // Put the code you want to measure the time of here.
         }
     }
